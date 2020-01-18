@@ -1,4 +1,4 @@
-const todoList: string[] = [];
+let todoList: string[] = [];
 const todoInput: HTMLInputElement = document.getElementById("todoInput") as HTMLInputElement;
 
 // addTodo - takes user input and create a new todo
@@ -32,6 +32,9 @@ function addTodo(): void {
 
         // update the todo list
         updateTodoList();
+
+        // filter the tod list
+        filterTodoList();
     }
 }
 
@@ -50,7 +53,49 @@ function updateTodoList(): void {
     todoList.forEach(item => {
         const li = document.createElement("li");
         li.setAttribute("class", "todo-list-item");
-        li.innerText = item;
+        li.innerHTML = `<a href="#" onclick='removeTodoListItem("${item}")'>${item}</a>`;
         ul.appendChild(li);
     });
+}
+
+function filterTodoList() :void {
+    console.log("Filtering the rendered list..");
+
+    const todoListHtml: HTMLUListElement = document.getElementById("todoList") as HTMLUListElement;
+
+    if (todoListHtml === null) {
+        console.log("Nothing to Filter");
+        return;
+    }
+
+    const todoListFilter = document.getElementById("todoFilter") as HTMLInputElement;
+    const todoListFilterText = todoListFilter.value.toUpperCase();
+
+    todoListHtml.childNodes.forEach((item) => {
+        let itemText: string | null = item.textContent;
+
+        if (itemText !== null) {
+            itemText = itemText.toUpperCase();
+
+            if (itemText.startsWith(todoListFilterText)) {
+                (item as HTMLLIElement).style.display = "list-item";
+            } else {
+                (item as HTMLLIElement).style.display = "none";
+            }
+        }
+    });
+}
+
+function removeTodoListItem(itemToRemove: string): void {
+    console.log("Item to remove: ", itemToRemove);
+
+    todoList = todoList.filter((value: string, _index, _array) => {
+        if (value === itemToRemove) {
+            return false;
+        }
+        return true;
+    });
+
+    updateTodoList();
+    filterTodoList();
 }

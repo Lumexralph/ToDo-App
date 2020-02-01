@@ -1,2 +1,3 @@
 # ToDo-App
-Getting back my Javascript mojo back with TypeScript by building this popular app
+
+Getting back my Javascript mojo back with TypeScript by building this popular app version using a Procedural and Object-oriented approach.

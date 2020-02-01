@@ -1,0 +1,26 @@
+{
+  "name": "todo-app",
+  "version": "1.0.0",
+  "description": "an app for task management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc",
+    "watch": "tsc --watch",
+    "serve": "browser-sync start --server --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lumexralph/ToDo-App.git"
+  },
+  "author": "Olumide Ogundele",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lumexralph/ToDo-App/issues"
+  },
+  "homepage": "https://github.com/Lumexralph/ToDo-App#readme",
+  "devDependencies": {
+    "browser-sync": "^2.26.7",
+    "typescript": "3.7.4"
+  }
+}

@@ -1,101 +1,148 @@
-let todoList: string[] = [];
-const todoInput: HTMLInputElement = document.getElementById("todoInput") as HTMLInputElement;
+// Domain/Model layer
+class ToodoItem {
+    /**
+     * If you implement the TodoItem class as we propose, instances of the class
+     * will be immutable: Once an instance has been created, you cannot modify it,
+     * whether from the inside or from the outside.
+     * This is guaranteed because the fields are private and only expose a getter
+     * that protects the field from external modifications.
+     * In addition, the fields are also read-only, which prevents internal modifications as well.
+     * This is a practice that we heavily recommend.
+     */
+    private readonly _creationTimestamp: number;
+    private readonly _identifier: string;
 
-// addTodo - takes user input and create a new todo
-function addTodo(): void {
-    if (todoInput == null) {
-        console.error("The todo input is missing from the page")
-        return;
-    }
+    constructor(private _description: string, identifier?: string) {
+        this._creationTimestamp = new Date().getTime();
 
-    // get the value from the input
-    const newTodo: string = todoInput.value;
-
-    // ensure it is a valid text
-    // Always put the safe part of the check on the left (that is,
-    // the two single quotes). In this case, the empty string,
-    // '', is safe, while calling trim() on newTodo could trigger
-    // an error (for example, if it was null). This is just one of
-    // many defensive programming tricks.
-    if ("" !== newTodo.trim()) {
-        console.log("Adding Todo: ", newTodo);
-
-        // add new todo to the list
-        todoList.push(newTodo);
-        console.log("New Todo List: ", todoList);
-
-        // clear the input field
-        todoInput.value = "";
-
-        // keep the list sorted
-        todoList.sort()
-
-        // update the todo list
-        updateTodoList();
-
-        // filter the tod list
-        filterTodoList();
-    }
-}
-
-const todoListDiv: HTMLDivElement = document.getElementById("todoListContainer") as HTMLDivElement;
-
-function updateTodoList(): void {
-    console.log("Updating the rendered todo list");
-    todoListDiv.innerHTML = "";
-    todoListDiv.textContent = "";  // for Edge
-
-    const ul: HTMLUListElement = document.createElement('ul') as HTMLUListElement;
-    ul.setAttribute("id", "todoList");
-    todoListDiv.appendChild(ul);
-
-    // build the list of tasks/todo
-    todoList.forEach(item => {
-        const li = document.createElement("li");
-        li.setAttribute("class", "todo-list-item");
-        li.innerHTML = `<a href="#" onclick='removeTodoListItem("${item}")'>${item}</a>`;
-        ul.appendChild(li);
-    });
-}
-
-function filterTodoList() :void {
-    console.log("Filtering the rendered list..");
-
-    const todoListHtml: HTMLUListElement = document.getElementById("todoList") as HTMLUListElement;
-
-    if (todoListHtml === null) {
-        console.log("Nothing to Filter");
-        return;
-    }
-
-    const todoListFilter = document.getElementById("todoFilter") as HTMLInputElement;
-    const todoListFilterText = todoListFilter.value.toUpperCase();
-
-    todoListHtml.childNodes.forEach((item) => {
-        let itemText: string | null = item.textContent;
-
-        if (itemText !== null) {
-            itemText = itemText.toUpperCase();
-
-            if (itemText.startsWith(todoListFilterText)) {
-                (item as HTMLLIElement).style.display = "list-item";
-            } else {
-                (item as HTMLLIElement).style.display = "none";
-            }
+        if (identifier) {
+            this._identifier = identifier;
+        } else {
+            // for any real world project use
+            //  UUIDs instead: https://www.npmjs.com/package/uuid
+            this._identifier = Math.random().toString(36).substr(3, 10);
         }
-    });
+    }
+
+    get creationTimestamp(): number {
+        return this._creationTimestamp;
+    }
+
+    get identifier(): string {
+        return this._identifier;
+    }
+
+    get description(): string {
+        return this._description;
+    }
 }
 
-function removeTodoListItem(itemToRemove: string): void {
-    console.log("Item to remove: ", itemToRemove);
 
-    todoList = todoList.filter((value: string, _index, _array) => {
-        if (value === itemToRemove) {
-            return false;
+class TodoList {
+    private _todoList: ReadonlyArray<ToodoItem> = [];
+
+    constructor(todoList?: ToodoItem[]) {
+        // let's ensure we have a valid array
+        if (Array.isArray(todoList) && todoList.length) {
+            this._todoList = this._todoList.concat(todoList);
         }
-        return true;
-    });
+    }
 
-    updateTodoList();
-    filterTodoList();
+    get todoList(): ReadonlyArray<ToodoItem> {
+        return this._todoList;
+    }
+
+    addTodo(todoItem: ToodoItem): void {
+        if (todoItem) {
+            // the value is "truthy":
+            // not null, not undefined, not NaN, not an empty string,
+            // not 0, not false
+            // favor immutability to use a more functional approach.
+            this._todoList = this._todoList.concat(todoItem);
+        }
+    }
+
+    removeTodo(itemId: string): void {
+        if (itemId) {
+            // favor immutability to use a more functional approach.
+            this._todoList = this._todoList.filter(item => {
+                if (item.identifier == itemId) {
+                    return false; // drop the item
+                }
+                return true; // leave the item
+            });
+        }
+    }
+}
+
+// View layer - Interface user interacts with
+interface TodoListView {
+    render(todoList: ReadonlyArray<ToodoItem>): void;
+    getInput(): ToodoItem;
+    getFilter(): string;
+    clearInput(): void;
+    filter(): void;
+}
+
+// HTML-based implementation of the interface
+class HTMLTodoListView implements TodoListView {
+    private readonly todoInput: HTMLInputElement;
+    private readonly todoListDiv: HTMLDivElement;
+    private readonly todoListFilter: HTMLInputElement;
+
+    constructor() {
+        this.todoInput = document.getElementById("todoInput") as HTMLInputElement;
+        this.todoListDiv = document.getElementById("todoListContainer") as HTMLDivElement;
+        this.todoListFilter = document.getElementById("todoFilter") as HTMLInputElement;
+
+        // defensive check
+        if (!this.todoInput) {
+            throw new Error("Could not the HTML input element with todoInput id. Is the HTML correct?");
+        }
+
+        if (!this.todoListDiv) {
+            throw new Error("Could not the HTML div element with todoListContainer id. Is the HTML correct?");
+        }
+
+        if (!this.todoListFilter) {
+            throw new Error("Could not the HTML input element with todoFilter id. Is the HTML correct?");
+        }
+    }
+
+    clearInput(): void {
+        this.todoInput.value = "";
+    }
+
+    getFilter(): string {
+        return this.todoListFilter.value.toUpperCase();
+    }
+
+    getInput(): ToodoItem {
+        const todoInputValue: string = this.todoInput.value.trim();
+        const retVal: ToodoItem = new ToodoItem(todoInputValue);
+
+        return retVal;
+    }
+
+    filter(): void {
+        console.log("Filtering the rendered list..");
+    }
+
+    render(todoList: ReadonlyArray<ToodoItem>): void {
+        console.log("Updating the rendered todo list");
+        this.todoListDiv.innerHTML = "";
+        this.todoListDiv.textContent = "";  // for Edge
+
+        const ul: HTMLUListElement = document.createElement('ul') as HTMLUListElement;
+        ul.setAttribute("id", "todoList");
+        this.todoListDiv.appendChild(ul);
+
+        // build the list of tasks/todo
+        todoList.forEach(item => {
+            const li = document.createElement("li");
+            li.setAttribute("class", "todo-list-item");
+            li.innerHTML = `<a href="#" onclick='todoIt.removeTodo("${item.identifier}")'>${item.description}</a>`;
+            ul.appendChild(li);
+        });
+    }
 }

@@ -126,6 +126,26 @@ class HTMLTodoListView implements TodoListView {
 
     filter(): void {
         console.log("Filtering the rendered list..");
+        const todoListHtml: HTMLUListElement = document.getElementById("todoList") as HTMLUListElement;
+        if (todoListHtml === null) {
+            console.log("Nothing to Filter");
+            return;
+        }
+
+        const todoListFilterText = this.getFilter();
+        todoListHtml.childNodes.forEach((item) => {
+            let itemText: string | null = item.textContent;
+
+            if (itemText !== null) {
+                itemText = itemText.toUpperCase();
+
+                if (itemText.startsWith(todoListFilterText)) {
+                    (item as HTMLLIElement).style.display = "list-item";
+                } else {
+                    (item as HTMLLIElement).style.display = "none";
+                }
+            }
+        });
     }
 
     render(todoList: ReadonlyArray<ToodoItem>): void {
@@ -146,3 +166,106 @@ class HTMLTodoListView implements TodoListView {
         });
     }
 }
+
+// Controller layer - Where all the logic happens between Model and View
+
+// Controller interface - what the controller should be able to do
+interface TodoListController {
+    addTodo(): void;
+    filterTodoList(): void;
+    removeTodo(identifier: string): void;
+}
+
+// controller is initiated with the view interface i.e any object that
+// implements the TodoListView interface
+class TodoIt implements TodoListController {
+    // reference to the model and its operations
+    private readonly _todoList: TodoList = new TodoList();
+
+    constructor(private _todoListView: TodoListView) {
+        // reference to tne view
+        // whatever we have for the view must have the TodoListView interface
+        // because we'll be calling the methods without caring about the implementation.
+        // it also helps to decouple the code, the different architecture layers
+        console.log("TodoIt V2")
+
+        if (!this._todoList) {
+            throw new Error("The todo list view implementation is required to properly initialize TodoIt!");
+        }
+    }
+
+    addTodo(): void {
+        // get the value from the view
+        const newTodo = this._todoListView.getInput();
+
+        // validate the input
+        if ("" !== newTodo.description) {
+            console.log("Adding todo: ", newTodo);
+        }
+
+        // add the new item to the list, interact with the model or domain
+        this._todoList.addTodo(newTodo);
+        console.log("New todo list: ", this._todoList.todoList);
+
+        // clear the input
+        this._todoListView.clearInput();
+
+        // update the rendered todo list
+        this._todoListView.render(this._todoList.todoList);
+
+
+        // filter the list if needed
+        this.filterTodoList();
+    }
+
+    filterTodoList(): void {
+        // interact with the view
+        this._todoListView.filter();
+    }
+
+    removeTodo(identifier: string): void {
+        if (identifier) {
+            console.log("item to remove: ", identifier);
+            // interact with the model or data
+            this._todoList.removeTodo(identifier);
+            // interact with the view and the model
+            this._todoListView.render(this._todoList.todoList);
+            this.filterTodoList();
+        }
+    }
+}
+
+// utility function
+class EventUtils {
+    static isEnter(event: KeyboardEvent) {
+        let isEnterResult: boolean = false;
+
+        class EventUtils {
+            static isEnter(event: KeyboardEvent): boolean {
+                let isEnterResult = false;
+
+                if (event !== undefined && event.defaultPrevented) {
+                    return false;
+                }
+
+                if (event == undefined) {
+                    isEnterResult = false;
+                } else if (event.key !== undefined) {
+                    isEnterResult = event.key === 'Enter';
+                } else if (event.keyCode !== undefined) {
+                    isEnterResult = event.keyCode === 13;
+                }
+                return isEnterResult;
+            }
+     }
+    }
+}
+
+// instantiate the view
+const view = new HTMLTodoListView();
+// create the controller with the view
+// pass a concrete implementation of the view interface,
+// but our controller doesn't know and doesn't care.
+// All it cares about is that it gets something that is
+// compatible with the interface.
+const todoIt = new TodoIt(view);

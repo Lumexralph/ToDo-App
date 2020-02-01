@@ -14,13 +14,15 @@
     <h2>Add new items</h2>
     <p>
         What needs to be done?
-        <input type="text" id="todoInput" title="What should be added to
-        the todo list?" onblur="addTodo()"/>
-        <input type="button" value="Add todo" onclick="addTodo()"/>
+        <input type="text" id="todoInput" title="What should be added to the todo list?"
+            onblur="todoIt.addTodo()"
+            onkeyup="if (EventUtils.isEnter(event)) { todoIt.addTodo() }"
+            />
+        <input type="button" value="Add todo" onclick="todoIt.addTodo()"/>
     </p>
     <h2>Current todo list</h2>
     <p>Filter: <input type="text" id="todoFilter" title="Filter for the
-   todo list" onkeyup="filterTodoList()" onblur="filterTodoList()"/></p>
+   todo list" onkeyup="todoIt.filterTodoList()" onblur="todoIt.filterTodoList()"/></p>
     <div id="todoListContainer">Nothing to do, hurray!</div>
     <script type="text/javascript" src="todo.js"></script>
 </body>
